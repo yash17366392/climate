@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Eureka | About</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/app-logo.png">
+  <style>
+    /* ── Page-specific styles ── */
+    .about-hero {
+      position: relative;
+      padding: 100px 24px 80px;
+      text-align: center;
+      background: var(--deep);
+      overflow: hidden;
+    }
+    .about-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 70% at 50% 0%, rgba(45,90,61,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(200,168,75,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .about-hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(200,168,75,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,168,75,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+    .about-hero-content { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+
+    .divider-line {
+      width: 60px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 32px auto;
+    }
+
+    /* Sections */
+    .about-section {
+      padding: 80px 24px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .about-section + .about-section {
+      border-top: 1px solid var(--border);
+    }
+
+    .section-eyebrow {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 14px;
+      display: block;
+    }
+
+    /* What is Eureka */
+    .about-intro p {
+      font-size: 17px; font-weight: 300;
+      color: var(--text-body); line-height: 1.9;
+      margin-bottom: 18px;
+    }
+    .about-intro p:first-of-type {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px; color: var(--text-h);
+      font-style: italic;
+    }
+
+    /* Tech stack */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-top: 36px;
+    }
+    .tech-card {
+      background: var(--deep);
+      padding: 28px 24px;
+      transition: background 0.2s;
+    }
+    .tech-card:hover { background: var(--forest); }
+    .tech-icon {
+      font-size: 28px; margin-bottom: 12px; display: block;
+    }
+    .tech-card h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px; font-weight: 600;
+      color: var(--text-h); margin-bottom: 6px;
+      letter-spacing: 0.03em;
+    }
+    .tech-card p {
+      font-size: 12px; color: var(--text-dim); line-height: 1.6;
+    }
+
+    /* How it works */
+    .steps { margin-top: 36px; display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex; gap: 24px; align-items: flex-start;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 48px; font-weight: 300;
+      color: rgba(200,168,75,0.2);
+      line-height: 1; flex-shrink: 0;
+      width: 56px; text-align: center;
+      transition: color 0.3s;
+    }
+    .step:hover .step-num { color: var(--gold); }
+    .step-body h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px; font-weight: 600;
+      color: var(--text-h); margin-bottom: 6px;
+    }
+    .step-body p { font-size: 13px; color: var(--text-body); line-height: 1.7; }
+
+    /* Disclaimer */
+    .disclaimer-box {
+      background: var(--forest);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--r-md);
+      padding: 28px 32px;
+      position: relative;
+      margin-top: 36px;
+    }
+    .disclaimer-box::before {
+      content: '';
+      position: absolute; top: 0; left: 32px; right: 32px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .disclaimer-box p {
+      font-size: 13px; color: var(--text-body);
+      line-height: 1.8; font-style: italic;
+    }
+
+    /* Version badge */
+    .version-row {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 28px;
+    }
+    .v-badge {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 7px 16px;
+      border: 1px solid var(--border-gold);
+      border-radius: 50px;
+      color: var(--gold);
+      background: var(--gold-glow);
+    }
+
+    /* Animations */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      animation: fadeUp 0.7s var(--ease-out) forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up:nth-child(2) { animation-delay: 0.1s; }
+    .fade-up:nth-child(3) { animation-delay: 0.2s; }
+    .fade-up:nth-child(4) { animation-delay: 0.3s; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="assets/app-logo.png" alt="Eureka" style="width:46px;height:46px;">
+    <div class="user-info">
+      <strong id="userName">Guest</strong>
+      <span id="userEmail">Not signed in</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/">🏠 &nbsp;Home</a>
+    <a href="/identify-flora">🌿 &nbsp;Identify Flora</a>
+    <a href="/identify-fauna">🐾 &nbsp;Identify Fauna</a>
+    <a href="/history">📜 &nbsp;Field Log</a>
+    <a href="/about" class="active">✦ &nbsp;About</a>
+  </nav>
+  <div class="sidebar-footer"><p>EUREKA v2.0 &nbsp;·&nbsp; Gemini AI</p></div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<nav class="navbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <span class="logo">Eureka</span>
+  <div style="width:44px;"></div>
+</nav>
+
+<!-- Hero -->
+<section class="about-hero">
+  <div class="about-hero-content">
+    <div class="hero-eyebrow fade-up" style="display:inline-flex;margin-bottom:24px;">About the Project</div>
+    <h1 class="fade-up" style="font-size:clamp(2.4rem,6vw,4rem);font-weight:300;">
+      What is<br><em style="color:var(--gold);font-style:italic;">Eureka?</em>
+    </h1>
+    <div class="divider-line fade-up"></div>
+    <p class="fade-up" style="color:var(--text-body);font-size:15px;font-weight:300;line-height:1.8;max-width:520px;margin:0 auto;">
+      An AI-powered field research companion for biology students and nature enthusiasts —
+      built to make species identification fast, accurate, and academically useful.
+    </p>
+  </div>
+</section>
+
+<!-- About / Mission -->
+<section class="about-section about-intro">
+  <span class="section-eyebrow">The Mission</span>
+  <h2 style="margin-bottom:28px;">Built for the Field,<br>Designed for the Lab.</h2>
+  <p>
+    "Eureka was created with one goal — to bridge the gap between field observation and academic
+    documentation. Carrying a field guide isn't always practical. Having a trained AI in your pocket is."
+  </p>
+  <p>
+    Traditional species identification requires either years of expertise or bulky reference materials.
+    Eureka replaces both with a simple photograph. Point, capture, and receive instant scientific-grade
+    identification complete with taxonomy, habitat data, and GPS-tagged records.
+  </p>
+  <p>
+    Every sighting is automatically saved to a personal field log that can be exported for academic
+    submissions, research papers, or biodiversity surveys.
+  </p>
+
+  <div class="version-row">
+    <span class="v-badge">Eureka v2.0</span>
+    <span class="v-badge">Gemini 2.0 Flash</span>
+    <span class="v-badge">Firebase Auth</span>
+    <span class="v-badge">Cloud Firestore</span>
+    <span class="v-badge">Academic Research Tool</span>
+  </div>
+</section>
+
+<!-- How it Works -->
+<section class="about-section">
+  <span class="section-eyebrow">How It Works</span>
+  <h2>From Photo to<br>Scientific Record.</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-body">
+        <h4>Capture or Upload</h4>
+        <p>Use your device camera to photograph any plant or animal in the wild, or upload an existing image from your gallery.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-body">
+        <h4>AI Analysis</h4>
+        <p>The image is sent to Google's Gemini 2.0 Flash model which analyses visual features — leaf structure, colour patterns, body morphology — to identify the species.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-body">
+        <h4>Scientific Output</h4>
+        <p>Results include the common name, scientific name, taxonomic classification (family or class), habitat keywords, and a descriptive paragraph.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-body">
+        <h4>Geo-Tagged Log</h4>
+        <p>Every identification is automatically saved to your personal Field Log with a GPS coordinate timestamp, ready to export as CSV or Excel.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tech Stack -->
+<section class="about-section">
+  <span class="section-eyebrow">Technology Stack</span>
+  <h2>What Powers<br>Eureka.</h2>
+  <div class="tech-grid">
+    <div class="tech-card">
+      <span class="tech-icon">🤖</span>
+      <h4>Google Gemini AI</h4>
+      <p>Gemini 2.0 Flash for vision-based species identification with multi-model fallback.</p>
+    </div>
+    <div class="tech-card">
+      <span class="tech-icon">🐍</span>
+      <h4>Python / Flask</h4>
+      <p>Lightweight backend REST API handling image processing and Gemini API communication.</p>
+    </div>
+    <div class="tech-card">
+      <span class="tech-icon">🔥</span>
+      <h4>Firebase</h4>
+      <p>Google Firebase handles authentication (Email + Google OAuth) and Firestore cloud database.</p>
+    </div>
+    <div class="tech-card">
+      <span class="tech-icon">🌐</span>
+      <h4>Vanilla JS</h4>
+      <p>Zero-framework frontend — pure HTML, CSS and ES6 modules for fast load times on any device.</p>
+    </div>
+    <div class="tech-card">
+      <span class="tech-icon">📍</span>
+      <h4>Geolocation API</h4>
+      <p>Browser-native GPS coordinates automatically attached to every observation record.</p>
+    </div>
+    <div class="tech-card">
+      <span class="tech-icon">📊</span>
+      <h4>SheetJS / CSV</h4>
+      <p>One-click export of field logs to Excel or CSV for academic and research submissions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Disclaimer -->
+<section class="about-section">
+  <span class="section-eyebrow">Disclaimer</span>
+  <h2>Academic Use Only.</h2>
+  <div class="disclaimer-box">
+    <p>
+      Eureka is an academic research project and is intended for educational and field study purposes only.
+      AI-generated species identifications may not be 100% accurate and should not be used as the sole basis
+      for any critical biological, medical, or environmental decision. Always verify identifications with
+      a qualified expert or authoritative reference when accuracy is essential.
+      <br><br>
+      Species data is generated by Google Gemini AI. Eureka does not guarantee the completeness
+      or correctness of any identification result.
+    </p>
+  </div>
+
+  <p style="margin-top:36px;font-size:12px;color:var(--text-dim);text-align:center;letter-spacing:0.05em;">
+    © 2026 Eureka · Academic Research Project · Built with Gemini AI &amp; Firebase
+  </p>
+</section>
+
+<!-- Team -->
+<section class="about-section" style="text-align:center;">
+  <span class="section-eyebrow">The Team</span>
+  <h2 style="margin-bottom:48px;">Made By.</h2>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:48px;">
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;
+                  border:2px solid var(--border-gold);box-shadow:0 0 28px var(--gold-glow);">
+        <img src="assets/Yaswanth.jpeg" alt="Yaswanth"
+             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+      </div>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:400;
+                color:var(--text-h);letter-spacing:0.02em;">Pandiripalli Yaswanth</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;
+                  border:2px solid var(--border-gold);box-shadow:0 0 28px var(--gold-glow);">
+        <img src="assets/Achhutha.jpeg" alt="Achhutha"
+             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+      </div>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:400;
+                color:var(--text-h);letter-spacing:0.02em;">Achhutha Reddy</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;
+                  border:2px solid var(--border-gold);box-shadow:0 0 28px var(--gold-glow);">
+        <img src="assets/Ashish.jpeg" alt="Ashish"
+             style="width:100%;height:100%;object-fit:cover;object-position:top;">
+      </div>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:400;
+                color:var(--text-h);letter-spacing:0.02em;">Ashish Kumar Mandal</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container" style="flex-direction:column;gap:4px;">
+    <p>Eureka — Modern Biology Tool</p>
+    <small>© 2026 Academic Research Project · v2.0</small>
+  </div>
+</footer>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("open");
+    document.getElementById("overlay").classList.toggle("show");
+  }
+</script>
+<script type="module" src="/firebase-init.js"></script>
+</body>
+</html>

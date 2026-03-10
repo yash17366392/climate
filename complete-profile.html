@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Eureka | Complete Your Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/app-logo.png">
+</head>
+<body>
+<div class="login-wrapper">
+  <div class="login-card">
+    <img src="assets/app-logo.png" alt="Eureka" class="login-logo">
+    <h2>One Last Step</h2>
+    <p class="login-subtitle">Complete your profile to start your field research</p>
+
+    <div id="errorMessage"></div>
+
+    <div class="input-group">
+      <label class="input-label">Full Name</label>
+      <input id="fullName" class="login-input" type="text" placeholder="John Doe" autocomplete="name">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Username</label>
+      <input id="username" class="login-input" type="text" placeholder="johndoe123">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Phone Number</label>
+      <input id="phone" class="login-input" type="tel" placeholder="+91 9876543210" autocomplete="tel">
+    </div>
+
+    <div class="btn-group" style="margin-top:8px;">
+      <button class="btn-primary" id="saveBtn" style="width:100%;height:52px;">Save & Continue</button>
+    </div>
+  </div>
+  <p style="margin-top:28px;font-size:11px;color:var(--text-dim);position:relative;z-index:1;letter-spacing:0.08em;">
+    ACADEMIC PROJECT · EUREKA v2.0
+  </p>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const errorDiv = document.getElementById("errorMessage");
+function showErr(msg) { errorDiv.textContent = msg; errorDiv.style.display = "block"; }
+
+let currentUser = null;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { window.location.href = "/login.html"; return; }
+  currentUser = user;
+
+  // If profile already complete, skip this page
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid, "profile", "info"));
+    if (snap.exists() && snap.data().username) {
+      window.location.href = "/"; return;
+    }
+  } catch {}
+
+  // Pre-fill full name from Google if available
+  if (user.displayName) {
+    document.getElementById("fullName").value = user.displayName;
+  }
+});
+
+document.getElementById("saveBtn").onclick = async () => {
+  const fullName = document.getElementById("fullName").value.trim();
+  const username = document.getElementById("username").value.trim();
+  const phone    = document.getElementById("phone").value.trim();
+
+  if (!fullName) return showErr("Full name is required.");
+  if (!username) return showErr("Username is required.");
+  if (username.length < 3) return showErr("Username must be at least 3 characters.");
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return showErr("Username: letters, numbers and underscores only.");
+  if (!phone) return showErr("Phone number is required.");
+
+  const btn = document.getElementById("saveBtn");
+  btn.textContent = "Saving…"; btn.disabled = true;
+
+  try {
+    await setDoc(doc(db, "users", currentUser.uid, "profile", "info"), {
+      fullName, username, email: currentUser.email, phone,
+      createdAt: Date.now()
+    });
+    window.location.href = "/";
+  } catch(e) {
+    showErr("Failed to save profile: " + e.message);
+    btn.textContent = "Save & Continue"; btn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>

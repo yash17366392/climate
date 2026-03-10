@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Eureka | Field Log</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/app-logo.png">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    .role-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; padding: 5px 14px;
+      border-radius: 50px; margin-left: 12px;
+      vertical-align: middle;
+    }
+    .role-badge.admin {
+      background: rgba(200,168,75,0.12);
+      border: 1px solid var(--border-gold);
+      color: var(--gold);
+    }
+    .role-badge.user {
+      background: rgba(74,154,100,0.1);
+      border: 1px solid rgba(74,154,100,0.3);
+      color: var(--sage);
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="assets/app-logo.png" alt="Eureka" style="width:46px;height:46px;">
+    <div class="user-info">
+      <strong id="userName">Guest</strong>
+      <span id="userEmail">Loading…</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/">🏠 &nbsp;Home</a>
+    <a href="/identify-flora">🌿 &nbsp;Identify Flora</a>
+    <a href="/identify-fauna">🐾 &nbsp;Identify Fauna</a>
+    <a href="/history" class="active">📜 &nbsp;Field Log</a>
+    <a href="/about">✦ &nbsp;About</a>
+  </nav>
+  <div class="sidebar-footer"><p>EUREKA v2.0 &nbsp;·&nbsp; Gemini AI</p></div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<nav class="navbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <span class="logo">Eureka</span>
+  <div style="width:44px;"></div>
+</nav>
+
+<main style="max-width:1100px;margin:48px auto 100px;padding:0 24px;">
+  <div style="margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border);">
+    <span style="display:block;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">Observation Records</span>
+    <h1 style="font-size:clamp(1.8rem,4vw,2.8rem);display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+      Field Log
+      <span id="roleBadge" class="role-badge" style="display:none;"></span>
+    </h1>
+    <p id="logDesc" style="color:var(--text-body);font-size:14px;margin-top:8px;font-weight:300;">Your complete species observation history.</p>
+  </div>
+
+  <div class="table-container">
+    <table id="historyTable">
+      <thead>
+        <tr id="tableHeaders">
+          <!-- Headers injected by JS -->
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+
+  <div class="export-fab">
+    <button class="btn-primary" onclick="downloadCSV()" style="flex:1;">⬇ &nbsp;Export CSV</button>
+    <button class="btn-secondary" onclick="downloadExcel()" style="flex:1;">⬇ &nbsp;Export Excel</button>
+  </div>
+</main>
+
+<script type="module">
+import { auth, db, isAdmin } from "./firebase-init.js";
+import {
+  collection, getDocs, query, orderBy, collectionGroup
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+window.toggleSidebar = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("overlay").classList.toggle("show");
+};
+
+// ── Export helpers ───────────────────────────────────────────────
+window.downloadCSV = () => {
+  const rows = [...document.querySelectorAll("#historyBody tr")].map(tr =>
+    [...tr.querySelectorAll("td")].map(td => `"${td.innerText.replace("📍 ","").replace(/"/g,'""')}"`)
+  );
+  if (!rows.length) return alert("No records to export.");
+  const headers = [...document.querySelectorAll("#tableHeaders th")].map(th => `"${th.innerText}"`).join(",");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([headers + "\n" + rows.map(r=>r.join(",")).join("\n")], {type:"text/csv"}));
+  a.download = "Eureka_Field_Log.csv"; a.click();
+};
+
+window.downloadExcel = () => {
+  const ws = XLSX.utils.table_to_sheet(document.getElementById("historyTable"));
+  const cols = [];
+  Object.keys(ws).forEach(k => {
+    if (k[0]==="!") return;
+    const idx = XLSX.utils.decode_col(k.replace(/[0-9]/g,""));
+    const len = ws[k].v ? ws[k].v.toString().length : 0;
+    if (!cols[idx] || len > cols[idx].wch) cols[idx] = { wch: len+6 };
+  });
+  ws["!cols"] = cols;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Field Log");
+  XLSX.writeFile(wb, "Eureka_Field_Log.xlsx");
+};
+
+// ── Render row ───────────────────────────────────────────────────
+function renderRow(r, adminView) {
+  const date = new Date(r.datetime).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+  const mapUrl = r.location && r.location !== "Unknown"
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.location)}` : "#";
+  const typeBadge = r.type === "flora"
+    ? `<span style="font-size:10px;background:rgba(45,160,80,0.1);border:1px solid rgba(45,160,80,0.25);color:#4caf50;padding:2px 8px;border-radius:20px;letter-spacing:0.06em;">🌿 Flora</span>`
+    : `<span style="font-size:10px;background:rgba(200,168,75,0.1);border:1px solid var(--border-gold);color:var(--gold);padding:2px 8px;border-radius:20px;letter-spacing:0.06em;">🐾 Fauna</span>`;
+  const adminCols = adminView ? `<td data-label="Full Name"><strong style="color:var(--gold);">${r.fullName || r.username || "—"}</strong></td>` : "";
+  return `<tr>
+    ${adminCols}
+    <td data-label="Date">${date}</td>
+    <td data-label="Type">${typeBadge}</td>
+    <td data-label="Common Name"><strong>${r.commonName}</strong></td>
+    <td data-label="Scientific Name"><i>${r.scientificName}</i></td>
+    <td data-label="Habitat">${r.habitat}</td>
+    <td data-label="Location">
+      <a href="${mapUrl}" target="_blank" rel="noopener"
+         style="color:var(--sage);text-decoration:none;font-weight:600;font-size:12px;">
+        📍 ${r.location}
+      </a>
+    </td>
+  </tr>`;
+}
+
+// ── Empty state ──────────────────────────────────────────────────
+function emptyState(cols) {
+  return `<tr><td colspan="${cols}" style="text-align:center;padding:72px 20px;">
+    <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">🌱</div>
+    <p style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--text-h);font-weight:300;">No sightings recorded yet</p>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:6px;letter-spacing:0.05em;">Start identifying species to build your field log</p>
+  </td></tr>`;
+}
+
+// ── Load: General User ───────────────────────────────────────────
+async function loadUserHistory(user) {
+  // Set headers
+  document.getElementById("tableHeaders").innerHTML = `
+    <th>Date</th><th>Type</th><th>Common Name</th>
+    <th>Scientific Name</th><th>Habitat</th><th>Location</th>`;
+
+  const roleBadge = document.getElementById("roleBadge");
+  roleBadge.textContent = "Researcher"; roleBadge.className = "role-badge user"; roleBadge.style.display = "inline-flex";
+  document.getElementById("logDesc").textContent = "Your personal species observation history — export anytime.";
+
+  const body = document.getElementById("historyBody");
+  try {
+    const snap = await getDocs(query(collection(db,"users",user.uid,"history"), orderBy("datetime","desc")));
+    if (snap.empty) { body.innerHTML = emptyState(6); return; }
+    body.innerHTML = "";
+    snap.forEach(d => { body.innerHTML += renderRow(d.data(), false); });
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#ff6b6b;">Failed to load records. Please refresh.</td></tr>`;
+  }
+}
+
+// ── Load: Admin — all users ──────────────────────────────────────
+async function loadAdminHistory() {
+  // Set headers with Username column first
+  document.getElementById("tableHeaders").innerHTML = `
+    <th>Full Name</th><th>Date</th><th>Type</th><th>Common Name</th>
+    <th>Scientific Name</th><th>Habitat</th><th>Location</th>`;
+
+  const roleBadge = document.getElementById("roleBadge");
+  roleBadge.textContent = "Administrator"; roleBadge.className = "role-badge admin"; roleBadge.style.display = "inline-flex";
+  document.getElementById("logDesc").textContent = "All users' observation records — complete field database.";
+
+  const body = document.getElementById("historyBody");
+  try {
+    // Get all users first, build uid→username map
+    const usersSnap = await getDocs(collectionGroup(db, "profile"));
+    const profileMap = {};
+    usersSnap.forEach(d => {
+      // path: users/{uid}/profile/info
+      const uid = d.ref.path.split("/")[1];
+      profileMap[uid] = d.data().username || d.data().fullName || "Unknown";
+    });
+
+    // Get all history entries across all users
+    const historySnap = await getDocs(collectionGroup(db, "history"));
+
+    const allRecords = [];
+    historySnap.forEach(d => {
+      const uid = d.ref.path.split("/")[1]; // users/{uid}/history/{docId}
+      const data = d.data();
+      data.username = profileMap[uid] || "Unknown";
+      allRecords.push(data);
+    });
+
+    // Sort by datetime desc
+    allRecords.sort((a, b) => b.datetime - a.datetime);
+
+    if (!allRecords.length) { body.innerHTML = emptyState(7); return; }
+    body.innerHTML = "";
+    allRecords.forEach(r => { body.innerHTML += renderRow(r, true); });
+
+  } catch(e) {
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#ff6b6b;">Failed to load records: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Auth gate ────────────────────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  if (!user) { window.location.href = "/login.html"; return; }
+  if (isAdmin(user)) {
+    loadAdminHistory();
+  } else {
+    loadUserHistory(user);
+  }
+});
+</script>
+</body>
+</html>

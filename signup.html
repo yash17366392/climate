@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Eureka | Create Account</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/app-logo.png">
+  <style>
+    .signup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 16px;
+    }
+    .signup-grid .input-group:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 480px) {
+      .signup-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+  <div class="login-card" style="max-width:480px;">
+    <img src="assets/app-logo.png" alt="Eureka" class="login-logo">
+    <h2>Create Account</h2>
+    <p class="login-subtitle">Join Eureka and start your field research</p>
+
+    <div id="errorMessage"></div>
+    <div id="successMessage" style="display:none;background:rgba(45,160,80,0.12);border:1px solid rgba(45,160,80,0.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#4caf50;margin-bottom:16px;text-align:center;"></div>
+
+    <div class="signup-grid">
+      <div class="input-group">
+        <label class="input-label">Full Name</label>
+        <input id="fullName" class="login-input" type="text" placeholder="John Doe" autocomplete="name">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Username</label>
+        <input id="username" class="login-input" type="text" placeholder="johndoe123" autocomplete="username">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Email Address</label>
+        <input id="email" class="login-input" type="email" placeholder="researcher@example.com" autocomplete="email">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Phone Number</label>
+        <input id="phone" class="login-input" type="tel" placeholder="+91 9876543210" autocomplete="tel">
+      </div>
+    </div>
+
+    <div class="input-group" style="margin-top:4px;">
+      <label class="input-label">Password</label>
+      <div class="password-container">
+        <input id="pass" type="password" class="login-input" placeholder="••••••••" autocomplete="new-password">
+        <span class="toggle-password" id="eyeIcon">👁</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Confirm Password</label>
+      <div class="password-container">
+        <input id="confirmPass" type="password" class="login-input" placeholder="••••••••" autocomplete="new-password">
+        <span class="toggle-password" id="eyeIcon2">👁</span>
+      </div>
+    </div>
+
+    <div class="checklist">
+      <div class="check-item" id="length">○ &nbsp;8+ characters</div>
+      <div class="check-item" id="lowercase">○ &nbsp;Lowercase letter</div>
+      <div class="check-item" id="uppercase">○ &nbsp;Uppercase letter</div>
+      <div class="check-item" id="special">○ &nbsp;Special character</div>
+    </div>
+
+    <div class="btn-group" style="margin-top:8px;">
+      <button class="btn-primary" id="signupBtn" style="width:100%;height:52px;">Create Account</button>
+    </div>
+
+    <p style="text-align:center;font-size:13px;color:var(--text-dim);margin-top:16px;">
+      Already have an account?
+      <a href="/login.html" style="color:var(--gold);text-decoration:none;font-weight:600;">Sign in</a>
+    </p>
+  </div>
+
+  <p style="margin-top:28px;font-size:11px;color:var(--text-dim);position:relative;z-index:1;letter-spacing:0.08em;">
+    ACADEMIC PROJECT · EUREKA v2.0
+  </p>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-init.js";
+import {
+  createUserWithEmailAndPassword, updateProfile, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+onAuthStateChanged(auth, user => { if (user) window.location.href = "/"; });
+
+const passInput    = document.getElementById("pass");
+const confirmInput = document.getElementById("confirmPass");
+const errorDiv     = document.getElementById("errorMessage");
+const successDiv   = document.getElementById("successMessage");
+
+document.getElementById("eyeIcon").onclick = () => togglePass(passInput, "eyeIcon");
+document.getElementById("eyeIcon2").onclick = () => togglePass(confirmInput, "eyeIcon2");
+
+function togglePass(input, iconId) {
+  const hidden = input.type === "password";
+  input.type = hidden ? "text" : "password";
+  document.getElementById(iconId).textContent = hidden ? "🙈" : "👁";
+}
+
+passInput.oninput = () => {
+  const v = passInput.value;
+  setCheck("length",    v.length >= 8);
+  setCheck("lowercase", /[a-z]/.test(v));
+  setCheck("uppercase", /[A-Z]/.test(v));
+  setCheck("special",   /[^A-Za-z0-9]/.test(v));
+};
+
+function setCheck(id, ok) {
+  const el = document.getElementById(id);
+  const label = el.textContent.replace(/^[○✔\s]+/,"").trim();
+  el.classList.toggle("valid", ok);
+  el.textContent = (ok ? "✔ " : "○ ") + " " + label;
+}
+
+function showErr(msg) { errorDiv.textContent = msg; errorDiv.style.display = "block"; successDiv.style.display = "none"; }
+function hideErr()    { errorDiv.style.display = "none"; }
+
+document.getElementById("signupBtn").onclick = async () => {
+  hideErr();
+
+  const fullName = document.getElementById("fullName").value.trim();
+  const username = document.getElementById("username").value.trim();
+  const email    = document.getElementById("email").value.trim();
+  const phone    = document.getElementById("phone").value.trim();
+  const pass     = passInput.value;
+  const confirm  = confirmInput.value;
+
+  // Validation
+  if (!fullName) return showErr("Full name is required.");
+  if (!username) return showErr("Username is required.");
+  if (username.length < 3) return showErr("Username must be at least 3 characters.");
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return showErr("Username can only contain letters, numbers, and underscores.");
+  if (!email) return showErr("Email is required.");
+  if (!phone) return showErr("Phone number is required.");
+  if (pass.length < 8) return showErr("Password must be at least 8 characters.");
+  if (pass !== confirm) return showErr("Passwords do not match.");
+
+  const btn = document.getElementById("signupBtn");
+  btn.textContent = "Creating account…"; btn.disabled = true;
+
+  try {
+    // Create Firebase Auth user
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const user = cred.user;
+
+    // Update display name
+    await updateProfile(user, { displayName: fullName });
+
+    // Save profile to Firestore
+    await setDoc(doc(db, "users", user.uid, "profile", "info"), {
+      fullName, username, email, phone,
+      createdAt: Date.now()
+    });
+
+    successDiv.textContent = "Account created! Redirecting…";
+    successDiv.style.display = "block";
+    setTimeout(() => window.location.href = "/", 1200);
+
+  } catch(e) {
+    if (e.code === "auth/email-already-in-use") showErr("This email is already registered. Sign in instead.");
+    else showErr("Sign-up failed: " + e.message);
+  } finally {
+    btn.textContent = "Create Account"; btn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>

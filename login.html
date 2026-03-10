@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Eureka | Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/app-logo.png">
+</head>
+<body>
+
+<div class="login-wrapper">
+  <div class="login-card">
+    <img src="assets/app-logo.png" alt="Eureka" class="login-logo">
+    <h2>Welcome Back</h2>
+    <p class="login-subtitle">Sign in to continue your field research</p>
+
+    <div id="errorMessage"></div>
+    <div id="successMessage" style="display:none;background:rgba(45,160,80,0.12);border:1px solid rgba(45,160,80,0.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#4caf50;margin-bottom:16px;text-align:center;"></div>
+
+    <div class="input-group">
+      <label class="input-label">Email Address</label>
+      <input id="email" class="login-input" type="email" placeholder="researcher@example.com" autocomplete="email">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Password</label>
+      <div class="password-container">
+        <input id="pass" type="password" class="login-input" placeholder="••••••••" autocomplete="current-password">
+        <span class="toggle-password" id="eyeIcon">👁</span>
+      </div>
+    </div>
+
+
+    <div class="btn-group" style="margin-top:4px;">
+      <button class="btn-primary" id="loginBtn" style="width:100%;height:52px;">Sign In</button>
+    </div>
+
+    <div class="divider"><span>or continue with</span></div>
+
+    <button class="btn-secondary" id="googleBtn" style="width:100%;height:52px;margin-bottom:16px;">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="16" alt="">
+      Sign in with Google
+    </button>
+
+    <p style="text-align:center;font-size:13px;color:var(--text-dim);margin-top:8px;">
+      Don't have an account?
+      <a href="/signup" style="color:var(--gold);text-decoration:none;font-weight:600;">Create one</a>
+    </p>
+  </div>
+
+  <p style="margin-top:28px;font-size:11px;color:var(--text-dim);position:relative;z-index:1;letter-spacing:0.08em;">
+    ACADEMIC PROJECT · EUREKA v2.0
+  </p>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-init.js";
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider, signInWithPopup, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// If already logged in, check profile completeness
+onAuthStateChanged(auth, async user => {
+  if (!user) return;
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid, "profile", "info"));
+    if (snap.exists() && snap.data().username) {
+      window.location.href = "/";
+    } else {
+      window.location.href = "/complete-profile";
+    }
+  } catch { window.location.href = "/"; }
+});
+
+const emailInput = document.getElementById("email");
+const passInput  = document.getElementById("pass");
+const errorDiv   = document.getElementById("errorMessage");
+const successDiv = document.getElementById("successMessage");
+
+document.getElementById("eyeIcon").onclick = () => {
+  const hidden = passInput.type === "password";
+  passInput.type = hidden ? "text" : "password";
+  document.getElementById("eyeIcon").textContent = hidden ? "🙈" : "👁";
+};
+
+function showErr(msg) { errorDiv.textContent = msg; errorDiv.style.display = "block"; successDiv.style.display="none"; }
+function hideErr()    { errorDiv.style.display = "none"; }
+
+// ── Sign In ──────────────────────────────────────────────────────
+document.getElementById("loginBtn").onclick = async () => {
+  hideErr();
+  const btn = document.getElementById("loginBtn");
+  btn.textContent = "Signing in…"; btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, emailInput.value.trim(), passInput.value);
+    // onAuthStateChanged will handle redirect
+  } catch(e) {
+    showErr(e.code === "auth/invalid-credential" ? "Incorrect email or password." : e.message);
+    btn.textContent = "Sign In"; btn.disabled = false;
+  }
+};
+
+// ── Google Sign In ───────────────────────────────────────────────
+document.getElementById("googleBtn").onclick = async () => {
+  hideErr();
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+    // onAuthStateChanged will check profile and redirect accordingly
+  } catch { showErr("Google sign-in failed. Please try again."); }
+};
+
+
+</script>
+</body>
+</html>
